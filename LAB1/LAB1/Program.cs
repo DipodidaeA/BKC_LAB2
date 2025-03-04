@@ -1,12 +1,13 @@
 ﻿/*
-    Лабораторна робота ЛР1 Варіант 1.23 2.24 3.25
-    F1: E = A + B + C + D * (MA * MD)
-    F2: MG = SORT(MF - MH * MK)
-    F3: S = (O + P + V) * (MR * MS)
+    Лабораторна робота ЛР2 Варіант 23
+    F: X = sort(d * B + Z * (MM * MX)) * min(B)
+    P1: B, MX
+    P2: MM, X, Z, d
     Рак Антон Вікторович ІМ-24
-    Дата 19 02 2025
+    Дата 04 03 2025
 */
 
+using Data;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -18,11 +19,11 @@ namespace LAB1
         // Точка початку програми
         static void Main(string[] args)
         {
-            int N;
-
             // ввід числа N
             Console.Write("Input N: ");
-            N = int.Parse(Console.ReadLine());
+            int N = int.Parse(Console.ReadLine());
+
+            ProgData pD = new ProgData(N);
 
             // таймер часу
             Stopwatch stopwatch = new Stopwatch();
@@ -30,17 +31,16 @@ namespace LAB1
             stopwatch.Start();
 
             // Створення задач з ім'ям, приорітетом, номером ядра та функцією
-            Thread thread1 = CreateTask("F1", ThreadPriority.Highest, () => Task.F1.Func1(N));
-            Thread thread2 = CreateTask("F2", ThreadPriority.Lowest, () => Task.F2.Func2(N));
-            Thread thread3 = CreateTask("F3", ThreadPriority.Normal, () => Task.F3.Func3(N));
+            Thread thread1 = CreateTask("F1", ThreadPriority.Highest, () => Task.F1.Func1(N, pD));
+            Thread thread2 = CreateTask("F2", ThreadPriority.Lowest, () => Task.F2.Func2(N, pD));
 
             // щоб програма не завершувалася поки потоки не виконаються
             thread1.Join();
             thread2.Join();
-            thread3.Join();
 
             // зупинка таймеру часу
             stopwatch.Stop();
+
             // вивід всього часу програми
             Console.WriteLine($"Full Time: {stopwatch.ElapsedMilliseconds} ms");
         }
