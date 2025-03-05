@@ -5,87 +5,101 @@ using System.Threading;
 
 namespace Task
 {
-    static class F2
+    static class P2
     {
-        //ПОТІК 1:              ||B, MX || K = d * B    || Y = Z * MK || Q = K + Y || Q = sort(Q) || X = Q * m  ||
-        //ПОТІК 2: MM, X, Z, d  ||      || MK = MM * MX || m = min(B) ||                                        || Console(X)
         public static void Func2(int N, ProgData pD)
         {
+            Thread.Sleep(1000);
+
             FillParam fP = new FillParam();
             PrintText pT = new PrintText();
             MathFucn mF = new MathFucn();
+
             // таймер часу
             Stopwatch stopwatch = new Stopwatch();
 
-            //чекає дозволу на роботу
-            Console.WriteLine("<<<P2 Blocked>>>");
-            pD.semaphore_P2.WaitOne();
-            Console.WriteLine("<<<Program UnBlocked P2>>>");
 
             // якщо N менше рівне 4, вводимо з клавіатури
             Console.WriteLine("Func2. Input num...");
             if (N <= 4)
             {
-                fP.FillMatr("MM", pD.MM);
-                fP.FillVect("Z", pD.Z);
-                fP.FillNum("d", pD.d);
-
-                // запуст таймера часу
-                stopwatch.Start();
+                fP.FillMatr("MX", pD.MX);
+                fP.FillVect("B", pD.B);
             }
             else
             {
-                // запуст таймера часу
-                stopwatch.Start();
-
-                fP.FillMatrRand(pD.MM);
-                fP.FillVectRand(pD.Z);
-                fP.FillNumRand(pD.d);
+                fP.FillMatrRand(pD.MX);
+                fP.FillVectRand(pD.B);
             }
 
-            // розблоковує потік 1
-            Console.WriteLine("<<<P2 UnBlocking P1>>>");
+            // СИГНАЛ: B, MX введено	– S(1, 2), S(3, 2), S(4, 2)
             pD.semaphore_P1.Release();
+            pD.semaphore_P3.Release();
+            pD.semaphore_P4.Release();
 
-            //чекає дозволу на роботу від потоку 1
-            Console.WriteLine("<<<P2 Blocked>>>");
+            // ЧЕКАЄ: введення даних d, Z, MM  		– W(2, 4)
             pD.semaphore_P2.WaitOne();
-            Console.WriteLine("<<<P2 UnBlocked>>>");
 
-            // MK = MM * MX
-            Console.WriteLine("((( P2 Calculate: MK = MM * MX )))");
-            pD.MK = mF.MulMatr(pD.MM, pD.MX);
+            // запуст таймера часу
+            stopwatch.Start();
 
-            // розблоковує потік 1
-            Console.WriteLine("<<<P2 UnBlocking P1>>>");
+            // дія 1
+            int[] Bh = mF.GetPartVect(1, pD.H, pD.B);
+            int ai = mF.MinNumInVect(Bh);
+
+            // ЧЕКАЄ: а є вільним  		– W(2, 1)
+            pD.semaphore_P2.WaitOne();
+
+            // дія 2
+            pD.a = ai;    // КД 1
+
+            // СИГНАЛ: а є вільним         -- S(3,2)
+            pD.semaphore_P3.Release();
+
+            // ЧЕКАЄ: d є вільним  		– W(2, 1)
+            pD.semaphore_P2.WaitOne();
+
+            int d1 = pD.d;         // КД 2
+
+            // СИГНАЛ: d є вільним         -- S(3,2)
+            pD.semaphore_P3.Release();
+
+            // дія 3
+            int[,] MXh = mF.GetPartMatrTab(1, pD.H, pD.MX);
+            int[,] MR = mF.MulMatr(pD.MM, MXh);
+            int[] U = mF.MulVecMatr(pD.Z, MR);
+            int[] C = mF.MulScalVector(d1, Bh);
+
+            int[] Rh = mF.AddVector(C, U);
+
+            // дія 4
+            pD.Q1hT2 = mF.SortVect(Rh);
+
+            // СИГНАЛ: Q1h обчислений для Т1         -- S(1,2)
             pD.semaphore_P1.Release();
 
-            // m = min(B)
-            Console.WriteLine("((( P2 Calculate: m = min(B) )))");
-            pD.m = mF.MinNumInVect(pD.B);
+            // ЧЕКАЄ: а є вільним  		– W(2, 1)
+            pD.semaphore_P2.WaitOne();
 
-            // розблоковує потік 1
-            Console.WriteLine("<<<P2 UnBlocking P1>>>");
-            pD.semaphore_P1.Release();
+            ai = pD.a;          // КД 3
+
+            // СИГНАЛ: a є вільним         -- S(3,2)
+            pD.semaphore_P3.Release();
+
+            // ЧЕКАЄ: Т1 закінчив обчислення  		– W(2, 1)
+            pD.semaphore_P2.WaitOne();
+
+            // дія 7
+            int[] Xh = mF.MulScalVector(ai, mF.GetPartVect(1, pD.H, pD.Q));
+            pD.X = mF.VectConcat(pD.X, Xh);
+
+            // СИГНАЛ: Т2 закінчив обчислення         -- S(3,2)
+            pD.semaphore_P3.Release();
 
             // зупинка таймеру часу
             stopwatch.Stop();
 
-            //чекає дозволу на роботу від потоку 1
-            Console.WriteLine("<<<P2 Blocked>>>");
-            pD.semaphore_P2.WaitOne();
-            Console.WriteLine("<<<P2 UnBlocked>>>");
-
-            // якщо N менше рівне 4, виводимо результат обчислення
-            if (N <= 4)
-            {
-                Console.Write($"P2 end; N: {N}; Time: {stopwatch.ElapsedMilliseconds} ms; Res: ");
-                pT.PrintVect("X", pD.X);
-            }
-            else
-            {
-                Console.WriteLine($"P2 end; N: {N}; Time: {stopwatch.ElapsedMilliseconds} ms");
-            }
+            Console.WriteLine($"P2 end; H: {pD.H}; Time: {stopwatch.ElapsedMilliseconds} ms");
         }
     }
 }

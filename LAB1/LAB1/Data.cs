@@ -9,29 +9,36 @@ namespace Data
     //F: X = sort(d * B + Z * (MM * MX)) * min(B)
     public class ProgData
     {
-        public int d;
+        public int[] X;
+
+        public int d;         // СР
         public int[] B;
         public int[] Z;
-        public int[] X; // Q * m
         public int[,] MM;
         public int[,] MX;
 
-        public int[,] MK; // MM * MX
-        public int[] K; // d * B
-        public int m; // min(B)
-        public int[] Y; // Z * MK
-        public int[] Q; // K + Y and sort(Q)
+        public int[] Q1hT2;
+        public int[] Q1hT4;
+        public int[] Q2hT3;
+        public int[] Q;
 
-        public Semaphore semaphore_P1; // семафор першого потоку
-        public Semaphore semaphore_P2; // семафор другого потоку
+        public int a;   // СР
+
+        public int H;
+
+        public Semaphore semaphore_P1 = new Semaphore(0, 3); // семафор, перший потік чекає
+        public Semaphore semaphore_P2 = new Semaphore(0, 3); // семафор, другий потік чекає
+        public Semaphore semaphore_P3 = new Semaphore(0, 3); // семафор, третій потік чекає
+        public Semaphore semaphore_P4 = new Semaphore(0, 3); // семафор, четвертий потік чекає
 
         public ProgData(int N)
         {
-            B = Z = X = K = Y = Q = new int[N];
-            MM = MX = MK = new int[N,N];
-
-            semaphore_P1 = new Semaphore(0, 1);  // перший потік чекає
-            semaphore_P2 = new Semaphore(1, 1); // другий потік починає
+            d = new int();
+            B = new int[N];
+            Z = new int[N];
+            MM = new int[N,N];
+            MX = new int[N, N];
+            H = N / 4;
         }
     }
 
@@ -42,65 +49,68 @@ namespace Data
         public int[] MulScalVector(int A, int[] B)
         {
             int N = B.Length;
-            int[] R = new int[N];
+            int[] res = new int[N];
 
             for (int i = 0; i < N; i++)
             {
-                R[i] = A * B[i];
+                res[i] = A * B[i];
             }
 
-            return R;
+            return res;
         }
 
         // додає два вектори, повертає вектор
         public int[] AddVector(int[] A, int[] B)
         {
             int N = A.Length;
-            int[] R = new int[N];
+            int[] res = new int[N];
 
             for (int i = 0; i < N; i++)
             {
-                R[i] = A[i] + B[i];
+                res[i] = A[i] + B[i];
             }
 
-            return R;
+            return res;
         }
 
         // Множення вектора на матриць, повертає вектор
         public int[] MulVecMatr(int[] A, int[,] B)
         {
             int N = A.Length;
-            int[] R = new int[N];
+            int H2 = B.GetLength(1);
+            int[] res = new int[H2];
 
-            for (int i = 0; i < N; i++)
+            for (int i = 0; i < H2; i++)
             {
-                for (int j = 0; j < N; j++)
+                for (int k = 0; k < N; k++)
                 {
-                    R[i] += A[j] * B[j, i];
+                    res[i] += A[k] * B[k, i];
                 }
             }
 
-            return R;
+            return res;
         }
 
         // множення матриць, повертає матрицю
         public int[,] MulMatr(int[,] A, int[,] B)
         {
-            int N = A.GetLength(0);
-            int[,] R = new int[N, N];
+            int H1 = A.GetLength(0);
+            int N = A.GetLength(1);
+            int H2 = B.GetLength(1);
+            int[,] res = new int[H1, H2];
 
-            for (int i = 0; i < N; i++)
+            for (int i = 0; i < H1; i++)
             {
-                for (int j = 0; j < N; j++)
+                for (int j = 0; j < H2; j++)
                 {
                     for (int k = 0; k < N; k++)
                     {
-                        R[i, j] += A[i, k] * B[k, j];
+                        res[i, j] += A[i, k] * B[k, j];
                     }
                 }
             }
 
-            return R;
+            return res;
         }
 
         // пошук мінімального числа у векторі, повертає число
@@ -110,9 +120,56 @@ namespace Data
         }
 
         // сортує отриманий вектор
-        public void SortVect(int[] A)
+        public int[] SortVect(int[] A)
         {
-            Array.Sort(A);
+            return A.OrderBy(x => x).ToArray();
+        }
+
+        public int[] SortVectConcat(int[] A, int[] B)
+        {
+            var res = A.Concat(B).ToArray();
+
+            return res.OrderBy(x => x).ToArray();
+        }
+
+        public int[] VectConcat(int[] A, int[] B)
+        {
+            var res = A.Concat(B).ToArray();
+
+            return res;
+        }
+
+        public int MinNum(int a, int ai)
+        {
+            return Math.Min(a, ai);
+        }
+
+        public int[] GetPartVect(int t, int H, int[] V)
+        {
+            int[] res = new int[H];
+
+            for (int i = 0; i < H; i++)
+            {
+                res[i] = V[i+H*t];
+            }
+
+            return res;
+        }
+
+        public int[,] GetPartMatrTab(int t, int H, int[,] MA)
+        {
+            int N = MA.GetLength(0);
+            int[,] res = new int[N, H];
+
+            for (int i = 0; i < H; i++)
+            {
+                for (int k = 0; k < N; k++)
+                {
+                    res[k, i] = MA[k, i+H*t];
+                }
+            }
+
+            return res;
         }
     }
 
