@@ -28,8 +28,8 @@ namespace Task
             }
             else
             {
-                fP.FillMatrRand(pD.MX);
-                fP.FillVectRand(pD.B);
+                fP.FillMatrAuto(pD.MX);
+                fP.FillVectAuto(pD.B);
             }
 
             // СИГНАЛ: B, MX введено	– S(1, 2), S(3, 2), S(4, 2)

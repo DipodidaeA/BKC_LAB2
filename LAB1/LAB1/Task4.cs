@@ -27,8 +27,7 @@ namespace Task
             {
                 fP.FillMatr("MM", pD.MM);
                 fP.FillVect("Z", pD.Z);
-                Console.Write($"d: ");
-
+                Console.Write("d: ");
                 pD.d = int.Parse(Console.ReadLine());
 
                 Console.WriteLine();
@@ -36,9 +35,9 @@ namespace Task
             }
             else
             {
-                fP.FillMatrRand(pD.MM);
-                fP.FillVectRand(pD.Z);
-                fP.FillNumRand(pD.d);
+                fP.FillMatrAuto(pD.MM);
+                fP.FillVectAuto(pD.Z);
+                fP.FillNumAuto(pD.d);
             }
 
             // СИГНАЛ: MM, Z, d введено	– S(1, 4), S(2, 4), S(3, 4)
@@ -100,6 +99,8 @@ namespace Task
             else
             {
                 Console.WriteLine($"P4 end; H: {pD.H}; Time: {stopwatch.ElapsedMilliseconds} ms");
+                Console.WriteLine("Res: ");
+                Console.WriteLine("X[0]: " + pD.X[0]);
             }
         }
     }

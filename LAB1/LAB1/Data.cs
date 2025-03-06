@@ -176,7 +176,6 @@ namespace Data
     // клас для заповенння векторів та матриць для функцій
     public class FillParam
     {
-        Random random = new Random();
 
         // заповнення для числа
         public void FillNum(string nameN, int num)
@@ -222,24 +221,24 @@ namespace Data
         }
 
         // заповнення для числа
-        public void FillNumRand(int num)
+        public void FillNumAuto(int num)
         {
-            num = random.Next(1, 10);
+            num = 1;
         }
 
         // випадкове заповнення для вектора
-        public void FillVectRand(int[] V)
+        public void FillVectAuto(int[] V)
         {
             int N = V.Length;
 
             for (int i = 0; i < N; i++)
             {
-                V[i] = random.Next(1, 10);
+                V[i] = 1;
             }
         }
 
         // випадкове заповнення для матриці
-        public void FillMatrRand(int[,] MA)
+        public void FillMatrAuto(int[,] MA)
         {
             int N = MA.GetLength(0);
 
@@ -247,7 +246,7 @@ namespace Data
             {
                 for (int j = 0; j < N; j++)
                 {
-                    MA[i, j] = random.Next(1, 10);
+                    MA[i, j] = 1;
                 }
             }
         }
