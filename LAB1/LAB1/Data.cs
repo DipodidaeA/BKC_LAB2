@@ -6,7 +6,6 @@ using System.Xml.Linq;
 
 namespace Data
 {
-    //F: X = sort(d * B + Z * (MM * MX)) * min(B)
     public class ProgData
     {
         public int[] X;
@@ -176,18 +175,7 @@ namespace Data
     // клас для заповенння векторів та матриць для функцій
     public class FillParam
     {
-
-        // заповнення для числа
-        public void FillNum(string nameN, int num)
-        {
-            Console.Write($"{nameN}: ");
-
-            num = int.Parse(Console.ReadLine());
-
-            Console.WriteLine();
-        }
-
-        // заповнення для вектора
+        // заповнення для вектора, ввід
         public void FillVect(string nameV, int[] V)
         {
             int N = V.Length;
@@ -202,7 +190,7 @@ namespace Data
             Console.WriteLine();
         }
 
-        // заповнення для матриці
+        // заповнення для матриці, ввід
         public void FillMatr(string nameMA, int[,] MA)
         {
             int N = MA.GetLength(0);
@@ -220,13 +208,13 @@ namespace Data
             }
         }
 
-        // заповнення для числа
+        // заповнення для числа, автоматично
         public void FillNumAuto(int num)
         {
             num = 1;
         }
 
-        // випадкове заповнення для вектора
+        // випадкове заповнення для вектора, автоматично
         public void FillVectAuto(int[] V)
         {
             int N = V.Length;
@@ -237,7 +225,7 @@ namespace Data
             }
         }
 
-        // випадкове заповнення для матриці
+        // заповнення для матриці, автоматично
         public void FillMatrAuto(int[,] MA)
         {
             int N = MA.GetLength(0);
