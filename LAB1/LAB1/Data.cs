@@ -26,32 +26,41 @@ namespace Data
         public int a = 999;
 
         // розмір частини даних що дається для одного потоку
+        // задається у конструкторі
         public int H;
 
-        // семафор для очикування вводу Т2
+        // семафор для очікування вводу Т2
         public Semaphore sem1 = new Semaphore(0, 3);
-        // семафор для очикування вводу Т4
+        // семафор для очікування вводу Т4
         public Semaphore sem2 = new Semaphore(0, 3);
-        // семафор для очикування обчислення а
-        public Semaphore sem3 = new Semaphore(0, 4);
-        // семафор для очикування обчислення Q1h від Т2 для Т1
-        public Semaphore sem4 = new Semaphore(0, 1);
-        // семафор для очикування обчислення Q2h від Т3 для Т1
-        public Semaphore sem5 = new Semaphore(0, 1);
-        // семафор для очикування обчислення Q від Т1
+        // семафор для очікування обчислення а від Т1
+        public Semaphore sem3 = new Semaphore(0, 3);
+        // семафор для очікування обчислення а від Т2
+        public Semaphore sem4 = new Semaphore(0, 3);
+        // семафор для очікування обчислення а від Т3
+        public Semaphore sem5 = new Semaphore(0, 3);
+        // семафор для очікування обчислення а від Т4
         public Semaphore sem6 = new Semaphore(0, 3);
-        // семафор для очикування обчислення T1-T3
-        public Semaphore sem7 = new Semaphore(0, 3);
-        // семафор для очикування обчислення Q1h від Т4 для Т3
+        // семафор для очікування обчислення Q1h від Т2 для Т1
+        public Semaphore sem7 = new Semaphore(0, 1);
+        // семафор для очікування обчислення Q1h від Т4 для Т3
         public Semaphore sem8 = new Semaphore(0, 1);
+        // семафор для очікування обчислення Q2h від Т3 для Т1
+        public Semaphore sem9 = new Semaphore(0, 1);
+        // семафор для очікування обчислення Q від Т1
+        public Semaphore sem10 = new Semaphore(0, 3);
+        // семафор для очікування обчислення T1-T3
+        public Semaphore sem11 = new Semaphore(0, 3);
 
-        // семафор для захисту а
-        public Semaphore skd1 = new Semaphore(1, 1);
-        // семафор для захисту d
-        public Semaphore skd2 = new Semaphore(1, 1);
-        // семафор для захисту а
-        public Semaphore skd3 = new Semaphore(1, 1);
 
+        // подія для захисту а
+        public AutoResetEvent skd1 = new AutoResetEvent(true);
+        // подія для захисту d
+        public AutoResetEvent skd2 = new AutoResetEvent(true);
+        // подія для захисту а
+        public AutoResetEvent skd3 = new AutoResetEvent(true);
+
+        // конструктор
         public ProgData(int N)
         {
             X = new int[N];
@@ -61,18 +70,6 @@ namespace Data
             MM = new int[N,N];
             MX = new int[N, N];
             H = N / 4;
-        }
-
-        // лічільник потоків що завершили обчислення
-        public int c = 0;
-        // для перевірки чи всі потоки завершили обчислуння
-        public void isCheckCalc(int l, Semaphore sem)
-        {
-            if (c == l)
-            {
-                sem.Release(l);
-                c = 0;
-            }
         }
     }
 

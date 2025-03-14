@@ -24,74 +24,60 @@ namespace Task
             // 2) ЧЕКАТИ: введення даних d, Z, MM в Т4   – W(3, 4)
             pD.sem2.WaitOne();
 
-            // 3) обчислення 1.  a1 = min(Bh)
-            int ai = mF.MinNumInVect(mF.GetPartVect(2, pD.H, pD.B));
+            // 3) обчислення 1. a3 = min(Bh)
+            int a3 = mF.MinNumInVect(mF.GetPartVect(2, pD.H, pD.B));
 
-            // якщо а хтось вже використовує, чекаємо
+            // 4) обчислення 2. a = min(a, a3) 
             pD.skd1.WaitOne();
-
-            // 4) обчислення 2.  a = min(a, a1)   – КД 1
-            pD.a = mF.MinNum(pD.a, ai);
-
-            // збільшуємо кількість потоків що обчилили а
-            pD.c++;
+                pD.a = mF.MinNum(pD.a, a3);  // – КД 1
+            pD.skd1.Set();
 
             // 5) СИГНАЛИ: Т1,T2,T4 про обчислення  а	– S(1, 3), S(2, 3), S(4, 3)
-            pD.skd1.Release();
-
-            // перевіряємо чи всі потоки обчислили а
-            pD.isCheckCalc(4, pD.sem3);
+            pD.sem5.Release(3);
 
             // 6) ЧЕКАТИ: обчислення a від Т1,Т2,Т4  	– W(3, 1), W(3, 2), W(3, 4)
             pD.sem3.WaitOne();
-
-            // якщо d хтось вже використовує, чекаємо
-            pD.skd2.WaitOne();
-
-            // 7) копіювати d1 = d	 – КД 2
-            int d1 = pD.d;
-
-            // дозволяємо використовувати d
-            pD.skd2.Release();
-
-            // 8) обчислення 3. Rh = (d1 * Bh + Z * (MMн * MXh))
-            int[] Rh = mF.AddVector(mF.MulScalVector(d1, mF.GetPartVect(2, pD.H, pD.B)), mF.MulVecMatr(pD.Z, mF.MulMatr(pD.MM, mF.GetPartMatrTab(2, pD.H, pD.MX))));
-
-            // 9) обчислення 4. Q1h = sort(Rh)
-            int[] Q1hT3 = mF.SortVect(Rh);
-
-            // 10) ЧЕКАТИ: обчислення Q1h від Т4	– W(3, 4)
-            pD.sem8.WaitOne();
-
-            // 11) обчислення 5. Q2h = msort(Q1h, Q1h) 
-            pD.Q2hT3 = mF.SortVectConcat(Q1hT3, pD.Q1hT4);
-
-            // 12) СИГНАЛ: Q2h обчислений для Т1 	– S(1, 3)
-            pD.sem5.Release();
-
-            // 13) ЧЕКАТИ: обчислення Q від Т1 		– W(3, 1)
+            pD.sem4.WaitOne();
             pD.sem6.WaitOne();
 
-            // якщо a хтось вже використовує, чекаємо
+            // 7) копіюємо d у d3
+            pD.skd2.WaitOne();
+                int d3 = pD.d;          //  – КД 2
+            pD.skd2.Set();
+
+            // 8) обчислення 3. Rh = (d3 * Bh + Z * (MMн * MXh)) 
+            int[] Rh = mF.AddVector(mF.MulScalVector(d3, mF.GetPartVect(2, pD.H, pD.B)), mF.MulVecMatr(pD.Z, mF.MulMatr(pD.MM, mF.GetPartMatrTab(2, pD.H, pD.MX))));
+
+            // 9) обчислення 4. Qh = sort(Rh)
+            int[] Q1hT3 = mF.SortVect(Rh);
+
+            // 10) ЧЕКАТИ: обчислення Qh від Т4		– W(3, 4)
+            pD.sem8.WaitOne();
+
+            // 11) обчислення 5. Q2h = msort(Qh, Qh) 
+            pD.Q2hT3 = mF.SortVectConcat(Q1hT3, pD.Q1hT4);
+
+            // 12) СИГНАЛ: Т1 про обчислений Q2h		– S(1, 3)
+            pD.sem9.Release();
+
+            // 13) ЧЕКАТИ: обчислення Q від Т1 		– W(3, 1)
+            pD.sem10.WaitOne();
+
+            // копіюємо a у а3
             pD.skd3.WaitOne();
+                a3 = pD.a;      // – КД 3
+            pD.skd3.Set();
 
-            // 14) копіювати а1 = a		– КД 3
-            ai = pD.a;
-
-            // дозволяємо використовувати a
-            pD.skd3.Release();
-
-            // 15) обчислення 7. Xh = Qh * a1
-            mF.ReturnPartVect(2, pD.H, pD.X, mF.MulScalVector(ai, mF.GetPartVect(2, pD.H, pD.Q)));
+            // 15) обчислення 7. Xh = Qh * a3
+            mF.ReturnPartVect(2, pD.H, pD.X, mF.MulScalVector(a3, mF.GetPartVect(2, pD.H, pD.Q)));
 
             // зупинка таймеру часу
             stopwatch.Stop();
 
             Console.WriteLine($"T3 end; H: {pD.H}; Time: {stopwatch.ElapsedMilliseconds} ms");
 
-            // 16) СИГНАЛ: Т4 про Т3 закінчив обчислення	– S(4, 3)
-            pD.c++;
-            pD.isCheckCalc(3, pD.sem7);
+            // 16) СИГНАЛ: Т4 про закінчення обчислення	 	– S(4, 3)
+            pD.sem11.Release();
         }
     }
 }
