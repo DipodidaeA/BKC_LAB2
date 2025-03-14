@@ -5,79 +5,96 @@ using System.Threading;
 
 namespace Task
 {
-    static class P1
+    static class T1
     {
         public static void Func1(int N, ProgData pD)
         {
-            Thread.Sleep(1000);
-
             FillParam fP = new FillParam();
             PrintText pT = new PrintText();
             MathFucn mF = new MathFucn();
 
             // таймер часу
             Stopwatch stopwatch = new Stopwatch();
-
-            // ЧЕКАЄ: введення від Т2 -- W(1,2)
-            pD.semaphore_P1.WaitOne();
-            // ЧЕКАЄ: введення від Т4 -- W(1,4)
-            pD.semaphore_P1.WaitOne();
-
             // запуск таймеру часу
             stopwatch.Start();
 
-            // дія 1
-            int[] Bh = mF.GetPartVect(0, pD.H, pD.B);
-            int ai = mF.MinNumInVect(Bh);
+            // 1) ЧЕКАЄ: введення даних B, MX в Т2	– W(1, 2)
+            pD.sem1.WaitOne();
 
-            // дія 2
-            pD.a = ai;    // КД 1
+            // 2) ЧЕКАТИ: введення даних d, Z, MM в Т4   – W(1, 4)
+            pD.sem2.WaitOne();
 
-            // СИГНАЛ: а є вільним         -- S(2,1)
-            pD.semaphore_P2.Release();
+            // 3) обчислення 1.  a1 = min(Bh)
+            int ai = mF.MinNumInVect(mF.GetPartVect(0, pD.H, pD.B));
 
-            int d1 = pD.d;         // КД 2
+            // якщо а хтось вже використовує, чекаємо
+            pD.skd1.WaitOne();
 
-            // СИГНАЛ: d є вільним         -- S(2,1)
-            pD.semaphore_P2.Release();
+            // 4) обчислення 2.  a = min(a, a1)   – КД 1
+            pD.a = mF.MinNum(pD.a, ai);
 
-            // дія 3
-            int[,] MXh = mF.GetPartMatrTab(0, pD.H, pD.MX);
-            int[,] MR = mF.MulMatr(pD.MM, MXh);
-            int[] U = mF.MulVecMatr(pD.Z, MR);
-            int[] C = mF.MulScalVector(d1, Bh);
+            // збільшуємо кількість потоків що обчилили а
+            pD.c++;
 
-            int[] Rh = mF.AddVector(C, U);
+            // 5) СИГНАЛИ: Т2-T4 про обчислення  а	– S(2, 1), S(3, 1), S(4, 1)
+            pD.skd1.Release();
 
-            // дія 4
+            // перевіряємо чи всі потоки обчислили а
+            pD.isCheckCalc(4, pD.sem3);
+
+            // 6) ЧЕКАТИ: обчислення а  від Т2-Т4  – W(1, 2), W(1, 3), W(1, 4)
+            pD.sem3.WaitOne();
+
+            // якщо d хтось вже використовує, чекаємо
+            pD.skd2.WaitOne();
+
+            // 7) копіювати d1 = d	 – КД 2
+            int d1 = pD.d; 
+
+            // дозволяємо використовувати d
+            pD.skd2.Release();
+
+            // 8) обчислення 3. Rh = (d1 * Bh + Z * (MMн * MXh))
+            int[] Rh = mF.AddVector(mF.MulScalVector(d1, mF.GetPartVect(0, pD.H, pD.B)), mF.MulVecMatr(pD.Z, mF.MulMatr(pD.MM, mF.GetPartMatrTab(0, pD.H, pD.MX))));
+
+            // 9) обчислення 4. Q1h = sort(Rh)
             int[] Q1hT1 = mF.SortVect(Rh);
 
-            // ЧЕКАЄ: обчислення Q1hT2 від Т2	  -- W(1,2)
-            pD.semaphore_P1.WaitOne();
+            // 10) ЧЕКАТИ: обчислення Q1h від Т2    – W(1, 2)
+            pD.sem4.WaitOne();
 
-            // дія 5
+            // 11) обчислення 5. Q2h = msort(Q1h, Q1h)  
             int[] Q2hT1 = mF.SortVectConcat(Q1hT1, pD.Q1hT2);
 
-            // ЧЕКАЄ: обчислення Q2hT3 від Т3	   -- W(1,3)
-            pD.semaphore_P1.WaitOne();
+            // 12) ЧЕКАТИ: обчислення Q2h від Т3	– W(1, 3)
+            pD.sem5.WaitOne();
 
-            // дія 6
+            // 13) обчислення 6. Q = msort(Q2h, Q2h)
             pD.Q = mF.SortVectConcat(Q2hT1, pD.Q2hT3);
-            ai = pD.a;          // КД 3
 
-            // СИГНАЛ: a є вільним         -- S(2,1)
-            pD.semaphore_P2.Release();
+            // 14) СИГНАЛИ: Т2-Т4 про обчислення Q
+            pD.sem6.Release(3);
 
-            // дія 7
-            pD.X = mF.MulScalVector(ai, mF.GetPartVect(0, pD.H, pD.Q));
+            // якщо a хтось вже використовує, чекаємо
+            pD.skd3.WaitOne();
 
-            // СИГНАЛ: Т1 закінчив обчислення         -- S(2,1)
-            pD.semaphore_P2.Release();
+            // 15) копіювати а1 = a		– КД 3
+            ai = pD.a;
+
+            // дозволяємо використовувати a
+            pD.skd3.Release();
+
+            // 16) обчислення 7. Xh = Qh * a1
+            mF.ReturnPartVect(0, pD.H, pD.X, mF.MulScalVector(ai, mF.GetPartVect(0, pD.H, pD.Q)));
 
             // зупинка таймеру часу
             stopwatch.Stop();
 
-            Console.WriteLine($"P1 end; H: {pD.H}; Time: {stopwatch.ElapsedMilliseconds} ms");
+            Console.WriteLine($"T1 end; H: {pD.H}; Time: {stopwatch.ElapsedMilliseconds} ms");
+
+            // 17) СИГНАЛ: Т4 про Т1 закінчив обчислення	– S(4, 1)
+            pD.c++;
+            pD.isCheckCalc(3, pD.sem7);
         }
     }
 }

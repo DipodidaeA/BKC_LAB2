@@ -8,36 +8,71 @@ namespace Data
 {
     public class ProgData
     {
+        // результат
         public int[] X;
 
-        public int d;         // СР
+        // дані що вводять
+        public int d;
         public int[] B;
         public int[] Z;
         public int[,] MM;
         public int[,] MX;
 
+        // проміжні дані
         public int[] Q1hT2;
         public int[] Q1hT4;
         public int[] Q2hT3;
         public int[] Q;
+        public int a = 999;
 
-        public int a;   // СР
-
+        // розмір частини даних що дається для одного потоку
         public int H;
 
-        public Semaphore semaphore_P1 = new Semaphore(0, 3); // семафор, перший потік чекає
-        public Semaphore semaphore_P2 = new Semaphore(0, 3); // семафор, другий потік чекає
-        public Semaphore semaphore_P3 = new Semaphore(0, 3); // семафор, третій потік чекає
-        public Semaphore semaphore_P4 = new Semaphore(0, 3); // семафор, четвертий потік чекає
+        // семафор для очикування вводу Т2
+        public Semaphore sem1 = new Semaphore(0, 3);
+        // семафор для очикування вводу Т4
+        public Semaphore sem2 = new Semaphore(0, 3);
+        // семафор для очикування обчислення а
+        public Semaphore sem3 = new Semaphore(0, 4);
+        // семафор для очикування обчислення Q1h від Т2 для Т1
+        public Semaphore sem4 = new Semaphore(0, 1);
+        // семафор для очикування обчислення Q2h від Т3 для Т1
+        public Semaphore sem5 = new Semaphore(0, 1);
+        // семафор для очикування обчислення Q від Т1
+        public Semaphore sem6 = new Semaphore(0, 3);
+        // семафор для очикування обчислення T1-T3
+        public Semaphore sem7 = new Semaphore(0, 3);
+        // семафор для очикування обчислення Q1h від Т4 для Т3
+        public Semaphore sem8 = new Semaphore(0, 1);
+
+        // семафор для захисту а
+        public Semaphore skd1 = new Semaphore(1, 1);
+        // семафор для захисту d
+        public Semaphore skd2 = new Semaphore(1, 1);
+        // семафор для захисту а
+        public Semaphore skd3 = new Semaphore(1, 1);
 
         public ProgData(int N)
         {
+            X = new int[N];
             d = new int();
             B = new int[N];
             Z = new int[N];
             MM = new int[N,N];
             MX = new int[N, N];
             H = N / 4;
+        }
+
+        // лічільник потоків що завершили обчислення
+        public int c = 0;
+        // для перевірки чи всі потоки завершили обчислуння
+        public void isCheckCalc(int l, Semaphore sem)
+        {
+            if (c == l)
+            {
+                sem.Release(l);
+                c = 0;
+            }
         }
     }
 
@@ -118,12 +153,19 @@ namespace Data
             return A.Min();
         }
 
+        // з двох чисел вибирає менше
+        public int MinNum(int a, int ai)
+        {
+            return Math.Min(a, ai);
+        }
+
         // сортує отриманий вектор
         public int[] SortVect(int[] A)
         {
             return A.OrderBy(x => x).ToArray();
         }
 
+        // обєднує два вектори та сортує результат
         public int[] SortVectConcat(int[] A, int[] B)
         {
             var res = A.Concat(B).ToArray();
@@ -131,18 +173,7 @@ namespace Data
             return res.OrderBy(x => x).ToArray();
         }
 
-        public int[] VectConcat(int[] A, int[] B)
-        {
-            var res = A.Concat(B).ToArray();
-
-            return res;
-        }
-
-        public int MinNum(int a, int ai)
-        {
-            return Math.Min(a, ai);
-        }
-
+        // отримує частину параметрів вектора для певного потоку
         public int[] GetPartVect(int t, int H, int[] V)
         {
             int[] res = new int[H];
@@ -155,6 +186,7 @@ namespace Data
             return res;
         }
 
+        // отримує частину параметрів стовпців матриці для певного потоку
         public int[,] GetPartMatrTab(int t, int H, int[,] MA)
         {
             int N = MA.GetLength(0);
@@ -170,51 +202,21 @@ namespace Data
 
             return res;
         }
+
+        // повертає частину параметрів вектора певного потоку
+        public void ReturnPartVect(int t, int H, int[] X, int[] V)
+        {
+            for (int i = 0; i < H; i++)
+            {
+                X[i + H * t] = V[i];
+            }
+        }
     }
 
     // клас для заповенння векторів та матриць для функцій
     public class FillParam
     {
-        // заповнення для вектора, ввід
-        public void FillVect(string nameV, int[] V)
-        {
-            int N = V.Length;
-            Console.WriteLine($"{nameV}:");
-
-            for (int i = 0; i < N; i++)
-            {
-                Console.Write($"{i}: ");
-                V[i] = int.Parse(Console.ReadLine());
-                Console.Write(" ");
-            }
-            Console.WriteLine();
-        }
-
-        // заповнення для матриці, ввід
-        public void FillMatr(string nameMA, int[,] MA)
-        {
-            int N = MA.GetLength(0);
-            Console.WriteLine($"{nameMA}:");
-
-            for (int i = 0; i < N; i++)
-            {
-                for (int j = 0; j < N; j++)
-                {
-                    Console.Write($"{i},{j}: ");
-                    MA[i, j] = int.Parse(Console.ReadLine());
-                    Console.Write(" ");
-                }
-                Console.WriteLine();
-            }
-        }
-
-        // заповнення для числа, автоматично
-        public void FillNumAuto(int num)
-        {
-            num = 1;
-        }
-
-        // випадкове заповнення для вектора, автоматично
+        // заповнення для вектора, автоматично
         public void FillVectAuto(int[] V)
         {
             int N = V.Length;
@@ -240,7 +242,7 @@ namespace Data
         }
     }
 
-    // клас для виводу векторів та матриць
+    // клас для виводу векторів
     public class PrintText
     {
         // для виводу вектора

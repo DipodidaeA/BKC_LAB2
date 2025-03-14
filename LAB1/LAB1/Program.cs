@@ -25,6 +25,7 @@ namespace LAB2
             Console.Write("Input N: ");
             int N = int.Parse(Console.ReadLine());
 
+            // спільна пам'ять
             ProgData pD = new ProgData(N);
 
             // таймер часу
@@ -33,10 +34,10 @@ namespace LAB2
             stopwatch.Start();
 
             // Створення задач з ім'ям, приорітетом та функцією
-            Thread thread1 = CreateTask("P1", ThreadPriority.Highest, () => Task.P1.Func1(N, pD));
-            Thread thread2 = CreateTask("P2", ThreadPriority.Highest, () => Task.P2.Func2(N, pD));
-            Thread thread3 = CreateTask("P3", ThreadPriority.Highest, () => Task.P3.Func3(N, pD));
-            Thread thread4 = CreateTask("P4", ThreadPriority.Highest, () => Task.P4.Func4(N, pD));
+            Thread thread1 = CreateTask("T1", ThreadPriority.Highest, () => Task.T1.Func1(N, pD));
+            Thread thread2 = CreateTask("T2", ThreadPriority.Highest, () => Task.T2.Func2(N, pD));
+            Thread thread3 = CreateTask("T3", ThreadPriority.Highest, () => Task.T3.Func3(N, pD));
+            Thread thread4 = CreateTask("T4", ThreadPriority.Highest, () => Task.T4.Func4(N, pD));
 
             // щоб програма не завершувалася поки потоки не виконаються
             thread1.Join();
@@ -66,7 +67,7 @@ namespace LAB2
 
             // запуску потоку
             thread.Start();
-            Console.WriteLine($"Thread start: {thread.Name}; Priority: {thread.Priority}");
+            Console.WriteLine($"{thread.Name} Start; Priority: {thread.Priority}");
 
             return thread;
         }
